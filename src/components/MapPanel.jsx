@@ -1,5 +1,13 @@
-import { useEffect, useMemo } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from 'react-leaflet'
+import { useEffect, useMemo, useState } from 'react'
+import {
+    MapContainer,
+    TileLayer,
+    Marker,
+    Popup,
+    CircleMarker,
+    Polyline,
+    useMap,
+} from 'react-leaflet'
 import L from 'leaflet'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -30,13 +38,21 @@ function MapPanel({
     entries = [],
     missingCount = 0,
     missingLocations = [],
+    routeEntries = [],
+    routeLabel = 'Podo',
+    formatDate,
     selectedEntryKey,
     onSelectEntry,
 }) {
+    const [viewMode, setViewMode] = useState('route')
     const selectedEntry = useMemo(
         () => entries.find((entry) => entry.entryKey === selectedEntryKey),
         [entries, selectedEntryKey],
     )
+
+    const routeLine = routeEntries.map((entry) => entry.coords)
+    const showRoute = viewMode === 'route'
+    const showPins = viewMode === 'all'
 
     return (
         <section className="map-panel">
@@ -44,17 +60,39 @@ function MapPanel({
                 <div>
                     <h2>Field map</h2>
                     <p>
-                        {entries.length > 0
-                            ? 'Pins reflect filtered activity with known coordinates.'
-                            : 'No mapped locations for the current filters.'}
+                        {showRoute
+                            ? `Tracking ${routeLabel}'s known route over time.`
+                            : entries.length > 0
+                                ? 'Pins reflect filtered activity with known coordinates.'
+                                : 'No mapped locations for the current filters.'}
                     </p>
                 </div>
                 <div className="map-meta">
-                    <span className="pill">{entries.length} pins</span>
+                    {showPins && <span className="pill">{entries.length} pins</span>}
+                    {showRoute && (
+                        <span className="pill subtle">{routeEntries.length} stops</span>
+                    )}
                     {missingCount > 0 && (
                         <span className="pill subtle">{missingCount} missing coords</span>
                     )}
                 </div>
+            </div>
+
+            <div className="map-toggle">
+                <button
+                    type="button"
+                    className={`map-toggle-button ${showRoute ? 'active' : ''}`}
+                    onClick={() => setViewMode('route')}
+                >
+                    {routeLabel} route
+                </button>
+                <button
+                    type="button"
+                    className={`map-toggle-button ${showPins ? 'active' : ''}`}
+                    onClick={() => setViewMode('all')}
+                >
+                    All activity
+                </button>
             </div>
 
             <div className="map-canvas">
@@ -63,21 +101,49 @@ function MapPanel({
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    {entries.map((entry) => (
-                        <Marker
-                            key={entry.entryKey}
-                            position={entry.coords}
-                            eventHandlers={{
-                                click: () => onSelectEntry(entry.entryKey),
-                            }}
-                        >
-                            <Popup>
-                                <strong>{entry.locationLabel || 'Unknown location'}</strong>
-                                <div>{entry.summary}</div>
-                                <div>{entry.sourceLabel}</div>
-                            </Popup>
-                        </Marker>
-                    ))}
+                    {showPins &&
+                        entries.map((entry) => (
+                            <Marker
+                                key={entry.entryKey}
+                                position={entry.coords}
+                                eventHandlers={{
+                                    click: () => onSelectEntry(entry.entryKey),
+                                }}
+                            >
+                                <Popup>
+                                    <strong>
+                                        {entry.locationLabel || 'Unknown location'}
+                                    </strong>
+                                    <div>{entry.summary}</div>
+                                    <div>{entry.sourceLabel}</div>
+                                </Popup>
+                            </Marker>
+                        ))}
+                    {showRoute && routeLine.length > 1 && (
+                        <Polyline
+                            positions={routeLine}
+                            pathOptions={{ color: '#1f4c8b', weight: 3, opacity: 0.7 }}
+                        />
+                    )}
+                    {showRoute &&
+                        routeEntries.map((entry, index) => (
+                            <CircleMarker
+                                key={entry.entryKey}
+                                center={entry.coords}
+                                radius={6}
+                                pathOptions={{ color: '#1f4c8b', weight: 2, fillOpacity: 0.8 }}
+                            >
+                                <Popup>
+                                    <strong>
+                                        {routeLabel} stop {index + 1}
+                                    </strong>
+                                    <div>{entry.locationLabel || 'Unknown location'}</div>
+                                    {formatDate && (
+                                        <div>{formatDate(entry.createdAt)}</div>
+                                    )}
+                                </Popup>
+                            </CircleMarker>
+                        ))}
                     {selectedEntry && (
                         <CircleMarker
                             center={selectedEntry.coords}
@@ -88,6 +154,39 @@ function MapPanel({
                     <MapFocus target={selectedEntry} />
                 </MapContainer>
             </div>
+
+            {showRoute && routeEntries.length > 0 && (
+                <div className="route-panel">
+                    <div className="route-header">
+                        <h3>{routeLabel} route timeline</h3>
+                        <span className="pill subtle">{routeEntries.length} stops</span>
+                    </div>
+                    <ol className="route-list">
+                        {routeEntries.map((entry, index) => (
+                            <li
+                                key={entry.entryKey}
+                                className="route-item"
+                                onClick={() => onSelectEntry(entry.entryKey)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        onSelectEntry(entry.entryKey)
+                                    }
+                                }}
+                                role="button"
+                                tabIndex={0}
+                            >
+                                <span className="route-index">{index + 1}</span>
+                                <div className="route-meta">
+                                    <strong>{entry.locationLabel || 'Unknown location'}</strong>
+                                    {formatDate && (
+                                        <span className="muted">{formatDate(entry.createdAt)}</span>
+                                    )}
+                                </div>
+                            </li>
+                        ))}
+                    </ol>
+                </div>
+            )}
 
             {missingLocations.length > 0 && (
                 <details className="map-missing">
