@@ -53,6 +53,12 @@ body {
   box-sizing: border-box;
 }
 
+@media (max-width: 720px) {
+  #root {
+    border-inline: none;
+  }
+}
+
 h1,
 h2 {
   font-family: var(--heading);

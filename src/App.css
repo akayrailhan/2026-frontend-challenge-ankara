@@ -255,6 +255,94 @@
   font-family: inherit;
 }
 
+@media (max-width: 1024px) {
+  .app {
+    padding: 32px 24px 48px;
+  }
+
+  .hero {
+    padding: 22px;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .main-stack {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .filter-search {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding-right: 0;
+  }
+
+  .filter-fields input {
+    min-width: 200px;
+  }
+
+  .map-canvas .leaflet-container {
+    height: 320px;
+  }
+}
+
+@media (max-width: 720px) {
+  .app {
+    padding: 24px 18px 40px;
+    gap: 22px;
+  }
+
+  .hero {
+    padding: 18px;
+  }
+
+  .filters {
+    border-radius: 24px;
+    padding: 12px;
+  }
+
+  .filter-tabs {
+    gap: 8px;
+  }
+
+  .filter-search {
+    align-items: stretch;
+  }
+
+  .filter-fields input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .search-button {
+    width: 100%;
+  }
+
+  .map-canvas .leaflet-container {
+    height: 280px;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero {
+    padding: 16px;
+  }
+
+  .summary-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline,
+  .map-panel,
+  .detail-card,
+  .side-card {
+    padding: 16px;
+  }
+}
+
 .map-missing {
   border: 1px solid var(--border);
   border-radius: 16px;
