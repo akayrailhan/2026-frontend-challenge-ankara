@@ -184,6 +184,17 @@ function normalizeLocationKey(value) {
   return String(value).trim().toLowerCase()
 }
 
+function parseCoordinates(value) {
+  if (!value) return null
+  const parts = String(value)
+    .split(',')
+    .map((part) => Number(part.trim()))
+  if (parts.length !== 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1])) {
+    return null
+  }
+  return parts
+}
+
 function App() {
   const apiKey = import.meta.env.VITE_JOTFORM_API_KEY
   const [data, setData] = useState(initialState)
@@ -300,8 +311,10 @@ function App() {
     return filteredEntries
       .map((entry) => {
         const locationValue = getAnswerValue(entry.answers, 'location')
+        const rawCoords = getAnswerValue(entry.answers, 'coordinates')
+        const parsedCoords = parseCoordinates(rawCoords)
         const locationKey = normalizeLocationKey(locationValue)
-        const coords = LOCATION_COORDS[locationKey]
+        const coords = parsedCoords || LOCATION_COORDS[locationKey]
         if (!coords) return null
         return {
           entryKey: entry.entryKey,
@@ -317,6 +330,9 @@ function App() {
   const missingMapCount = useMemo(() => {
     return filteredEntries.filter((entry) => {
       const locationValue = getAnswerValue(entry.answers, 'location')
+      const rawCoords = getAnswerValue(entry.answers, 'coordinates')
+      const parsedCoords = parseCoordinates(rawCoords)
+      if (parsedCoords) return false
       if (!locationValue) return true
       const locationKey = normalizeLocationKey(locationValue)
       return !LOCATION_COORDS[locationKey]
@@ -327,7 +343,10 @@ function App() {
     const counts = new Map()
     filteredEntries.forEach((entry) => {
       const locationValue = getAnswerValue(entry.answers, 'location')
+      const rawCoords = getAnswerValue(entry.answers, 'coordinates')
+      const parsedCoords = parseCoordinates(rawCoords)
       const locationKey = normalizeLocationKey(locationValue)
+      if (parsedCoords) return
       if (!locationValue || !LOCATION_COORDS[locationKey]) {
         const label = locationValue ? String(locationValue) : 'Unknown'
         counts.set(label, (counts.get(label) || 0) + 1)
@@ -337,6 +356,27 @@ function App() {
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
   }, [filteredEntries])
+
+  const routeEntries = useMemo(() => {
+    const targetTag = normalizeForMatch('Podo')
+    return timelineEntries
+      .filter((entry) => entry.personTags.includes(targetTag))
+      .map((entry) => {
+        const locationValue = getAnswerValue(entry.answers, 'location')
+        const locationKey = normalizeLocationKey(locationValue)
+        const coords = LOCATION_COORDS[locationKey]
+        if (!coords) return null
+        return {
+          entryKey: entry.entryKey,
+          coords,
+          createdAt: entry.createdAt,
+          locationLabel: locationValue,
+          summary: entry.summary,
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+  }, [timelineEntries])
 
   const selectedEntry = useMemo(() => {
     if (!selectedEntryKey) return null
@@ -494,13 +534,6 @@ function App() {
 
       <div className="layout">
         <div className="main-stack">
-          <MapPanel
-            entries={mapEntries}
-            missingCount={missingMapCount}
-            missingLocations={missingLocations}
-            selectedEntryKey={selectedEntryKey}
-            onSelectEntry={setSelectedEntryKey}
-          />
           <Timeline
             activeSourceMeta={activeSourceMeta}
             groupedEntries={groupedEntries}
@@ -508,6 +541,16 @@ function App() {
             showLoading={activeSourceMeta?.status === 'loading'}
             showError={activeSourceMeta?.status === 'error'}
             errorMessage={activeSourceMeta?.error}
+            selectedEntryKey={selectedEntryKey}
+            onSelectEntry={setSelectedEntryKey}
+          />
+          <MapPanel
+            entries={mapEntries}
+            missingCount={missingMapCount}
+            missingLocations={missingLocations}
+            routeEntries={routeEntries}
+            routeLabel="Podo"
+            formatDate={formatDate}
             selectedEntryKey={selectedEntryKey}
             onSelectEntry={setSelectedEntryKey}
           />

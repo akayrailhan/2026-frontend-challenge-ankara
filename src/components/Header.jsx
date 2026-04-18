@@ -3,10 +3,8 @@ function Header({ apiKeyLoaded, totalEntries, sourceCount }) {
         <header className="hero">
             <div className="hero-copy">
                 <p className="eyebrow">Jotform Intel Board</p>
-                <h1>Unified investigation feed</h1>
-                <p className="subhead">
-                    One timeline, five data sources. Filter quickly, cross-check faster.
-                </p>
+                <h1>Podo Traction System</h1>
+                <p className="subhead">Track Podo.</p>
             </div>
             <div className="hero-metrics">
                 <div className="metric">
