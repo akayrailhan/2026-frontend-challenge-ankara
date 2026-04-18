@@ -7,6 +7,7 @@ import Filters from './components/Filters'
 import Timeline from './components/Timeline'
 import Sidebar from './components/Sidebar'
 import DetailView from './components/DetailView'
+import SummaryPanels from './components/SummaryPanels'
 
 const initialState = Object.fromEntries(
   SOURCES.map((source) => [
@@ -102,6 +103,13 @@ function summarizeSubmission(submission) {
     if (parts.length >= 2) break
   }
   return parts.join(' | ') || 'No answers previewed.'
+}
+
+function getAnswerValue(answers, fieldName) {
+  if (!answers) return ''
+  const list = Object.values(answers)
+  const match = list.find((answer) => answer?.name === fieldName)
+  return match?.answer ? String(match.answer) : ''
 }
 
 function formatDate(value) {
@@ -221,6 +229,42 @@ function App() {
       .slice(0, 8)
   }, [selectedEntry, timelineEntries])
 
+  const lastSeenWith = useMemo(() => {
+    const sightings = timelineEntries.filter(
+      (entry) => entry.source.key === 'sightings',
+    )
+    if (sightings.length === 0) return null
+    const latest = sightings[0]
+    return {
+      person: getAnswerValue(latest.answers, 'seenWith') || 'Unknown',
+      location: getAnswerValue(latest.answers, 'location') || 'Unknown',
+      date: latest.createdAt,
+    }
+  }, [timelineEntries])
+
+  const mostSuspicious = useMemo(() => {
+    const counts = new Map()
+    timelineEntries.forEach((entry) => {
+      entry.personTags.forEach((tag) => {
+        counts.set(tag, (counts.get(tag) || 0) + 1)
+      })
+    })
+    let topPerson = ''
+    let topCount = 0
+    counts.forEach((count, person) => {
+      if (count > topCount) {
+        topPerson = person
+        topCount = count
+      }
+    })
+    if (!topPerson) return null
+    return {
+      person: topPerson,
+      count: topCount,
+      reason: 'Most frequent across linked records',
+    }
+  }, [timelineEntries])
+
   useEffect(() => {
     const missingIds = SOURCES.filter((source) => !source.formId)
     if (!apiKey || missingIds.length > 0) {
@@ -305,6 +349,8 @@ function App() {
         totalEntries={timelineEntries.length}
         sourceCount={SOURCES.length}
       />
+
+      <SummaryPanels lastSeenWith={lastSeenWith} mostSuspicious={mostSuspicious} />
 
       <Filters
         sources={SOURCES}

@@ -76,6 +76,41 @@
   box-shadow: var(--shadow-soft);
 }
 
+.summary-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.summary-card {
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  padding: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 8px;
+}
+
+.summary-label {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12px;
+  color: var(--text);
+  margin: 0;
+}
+
+.summary-card h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.summary-meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
 .filter-tabs {
   display: flex;
   flex-wrap: wrap;
