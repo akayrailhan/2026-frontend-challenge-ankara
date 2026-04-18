@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { getForm, getSubmissions } from './api/jotform'
 import { SOURCES } from './data/sources'
+import Header from './components/Header'
+import Filters from './components/Filters'
+import Timeline from './components/Timeline'
+import Sidebar from './components/Sidebar'
 
 const initialState = Object.fromEntries(
   SOURCES.map((source) => [
@@ -43,6 +47,8 @@ function App() {
   const apiKey = import.meta.env.VITE_JOTFORM_API_KEY
   const [data, setData] = useState(initialState)
   const [activeSource, setActiveSource] = useState('all')
+  const [query, setQuery] = useState('')
+  const [draftQuery, setDraftQuery] = useState('')
 
   const sourceStatus = useMemo(
     () =>
@@ -75,11 +81,26 @@ function App() {
   }, [sourceStatus])
 
   const filteredEntries = useMemo(() => {
-    if (activeSource === 'all') return timelineEntries
-    return timelineEntries.filter(
-      (entry) => entry.source.key === activeSource,
-    )
-  }, [activeSource, timelineEntries])
+    const baseEntries =
+      activeSource === 'all'
+        ? timelineEntries
+        : timelineEntries.filter((entry) => entry.source.key === activeSource)
+
+    const trimmed = query.trim().toLowerCase()
+    if (!trimmed) return baseEntries
+
+    return baseEntries.filter((entry) => {
+      const haystack = [
+        entry.summary,
+        entry.source.label,
+        entry.status,
+        entry.createdAt,
+      ]
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(trimmed)
+    })
+  }, [activeSource, query, timelineEntries])
 
   const activeSourceMeta = useMemo(() => {
     if (activeSource === 'all') return null
@@ -165,132 +186,32 @@ function App() {
 
   return (
     <div className="app">
-      <header className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Jotform Intel Board</p>
-          <h1>Unified investigation feed</h1>
-          <p className="subhead">
-            One timeline, five data sources. Filter quickly, cross-check faster.
-          </p>
-        </div>
-        <div className="hero-metrics">
-          <div className="metric">
-            <span>API key</span>
-            <strong>{apiKey ? 'Loaded' : 'Missing'}</strong>
-          </div>
-          <div className="metric">
-            <span>Total entries</span>
-            <strong>{timelineEntries.length}</strong>
-          </div>
-          <div className="metric">
-            <span>Sources</span>
-            <strong>{SOURCES.length}</strong>
-          </div>
-        </div>
-      </header>
+      <Header
+        apiKeyLoaded={Boolean(apiKey)}
+        totalEntries={timelineEntries.length}
+        sourceCount={SOURCES.length}
+      />
 
-      <section className="filters" role="tablist" aria-label="Filter sources">
-        <button
-          type="button"
-          className={`filter-button ${activeSource === 'all' ? 'active' : ''}`}
-          onClick={() => setActiveSource('all')}
-          role="tab"
-          aria-selected={activeSource === 'all'}
-        >
-          All Sources
-        </button>
-        {SOURCES.map((source) => (
-          <button
-            key={source.key}
-            type="button"
-            className={`filter-button ${activeSource === source.key ? 'active' : ''
-              }`}
-            onClick={() => setActiveSource(source.key)}
-            role="tab"
-            aria-selected={activeSource === source.key}
-          >
-            {source.label}
-          </button>
-        ))}
-      </section>
+      <Filters
+        sources={SOURCES}
+        activeSource={activeSource}
+        onSourceChange={setActiveSource}
+        draftQuery={draftQuery}
+        onDraftChange={setDraftQuery}
+        onSearch={() => setQuery(draftQuery)}
+      />
 
       <div className="layout">
-        <section className="timeline">
-          <div className="timeline-header">
-            <div>
-              <h2>{activeSourceMeta?.label || 'All sources'}</h2>
-              <p>
-                {activeSourceMeta?.formTitle
-                  ? activeSourceMeta.formTitle
-                  : 'Most recent activity across the full dataset.'}
-              </p>
-            </div>
-            <span className="pill">
-              {filteredEntries.length} entries
-            </span>
-          </div>
+        <Timeline
+          activeSourceMeta={activeSourceMeta}
+          entries={filteredEntries}
+          formatDate={formatDate}
+          showLoading={activeSourceMeta?.status === 'loading'}
+          showError={activeSourceMeta?.status === 'error'}
+          errorMessage={activeSourceMeta?.error}
+        />
 
-          {activeSourceMeta?.status === 'loading' && (
-            <p className="muted">Loading submissions...</p>
-          )}
-
-          {activeSourceMeta?.status === 'error' && (
-            <p className="error">{activeSourceMeta.error}</p>
-          )}
-
-          {filteredEntries.length === 0 && (
-            <p className="muted">No submissions yet.</p>
-          )}
-
-          {filteredEntries.length > 0 && (
-            <ul className="entry-list">
-              {filteredEntries.map((entry) => (
-                <li key={`${entry.source.key}-${entry.id}`} className="entry">
-                  <div className="entry-top">
-                    <span className="entry-source">{entry.source.label}</span>
-                    <span className="entry-date">
-                      {formatDate(entry.createdAt)}
-                    </span>
-                  </div>
-                  <p>{entry.summary}</p>
-                  <div className="entry-meta">
-                    <span className="pill subtle">{entry.status}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <aside className="sidebar">
-          <div className="side-card">
-            <h3>Source status</h3>
-            <ul>
-              {sourceStatus.map((source) => (
-                <li key={source.key}>
-                  <div>
-                    <span>{source.label}</span>
-                  </div>
-                  <div className={`status-dot ${source.status}`}>
-                    {statusLabel[source.status]}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="side-card">
-            <h3>Quick totals</h3>
-            <div className="totals">
-              {sourceStatus.map((source) => (
-                <div key={source.key} className="total-row">
-                  <span>{source.label}</span>
-                  <strong>{source.submissions.length}</strong>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
+        <Sidebar sourceStatus={sourceStatus} statusLabel={statusLabel} />
       </div>
     </div>
   )
