@@ -72,6 +72,23 @@ function buildSearchText(submission) {
   }
 }
 
+function extractPersonTags(answers) {
+  const tags = new Set()
+  const list = answers ? Object.values(answers) : []
+  list.forEach((answer) => {
+    if (!answer) return
+    const name = answer.name || ''
+    if (!personFieldNames.includes(name)) return
+    const value = normalizeAnswerValue(answer.answer)
+    value
+      .split(',')
+      .map((part) => part.trim().toLowerCase())
+      .filter(Boolean)
+      .forEach((part) => tags.add(part))
+  })
+  return Array.from(tags)
+}
+
 function summarizeSubmission(submission) {
   const answers = submission?.answers ? Object.values(submission.answers) : []
   const parts = []
@@ -124,6 +141,7 @@ function App() {
       source.submissions.forEach((submission) => {
         const searchText = buildSearchText(submission)
         const entryKey = `${source.key}-${submission.id}`
+        const personTags = extractPersonTags(submission.answers)
         entries.push({
           id: submission.id,
           entryKey,
@@ -134,6 +152,7 @@ function App() {
           contentText: searchText.contentText,
           locationText: searchText.locationText,
           personText: searchText.personText,
+          personTags,
           answers: submission.answers,
         })
       })
@@ -192,6 +211,15 @@ function App() {
     if (!selectedEntryKey) return null
     return timelineEntries.find((entry) => entry.entryKey === selectedEntryKey)
   }, [selectedEntryKey, timelineEntries])
+
+  const linkedEntries = useMemo(() => {
+    if (!selectedEntry || selectedEntry.personTags.length === 0) return []
+    const tagSet = new Set(selectedEntry.personTags)
+    return timelineEntries
+      .filter((entry) => entry.entryKey !== selectedEntry.entryKey)
+      .filter((entry) => entry.personTags.some((tag) => tagSet.has(tag)))
+      .slice(0, 8)
+  }, [selectedEntry, timelineEntries])
 
   useEffect(() => {
     const missingIds = SOURCES.filter((source) => !source.formId)
@@ -308,7 +336,11 @@ function App() {
         />
 
         <div className="side-stack">
-          <DetailView entry={selectedEntry} />
+          <DetailView
+            entry={selectedEntry}
+            linkedEntries={linkedEntries}
+            onSelectLinked={setSelectedEntryKey}
+          />
           <Sidebar sourceStatus={sourceStatus} statusLabel={statusLabel} />
         </div>
       </div>

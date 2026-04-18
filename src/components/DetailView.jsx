@@ -1,4 +1,4 @@
-function DetailView({ entry }) {
+function DetailView({ entry, linkedEntries, onSelectLinked }) {
     if (!entry) {
         return (
             <section className="detail-card">
@@ -35,6 +35,27 @@ function DetailView({ entry }) {
                             <li key={answer.name || answer.text || answer.order}>
                                 <span>{answer.text || answer.name || 'Field'}</span>
                                 <strong>{String(answer.answer)}</strong>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+
+            <div className="detail-links">
+                <h4>Linked records</h4>
+                {linkedEntries.length === 0 ? (
+                    <p className="muted">No linked records found.</p>
+                ) : (
+                    <ul>
+                        {linkedEntries.map((linked) => (
+                            <li key={linked.entryKey}>
+                                <button
+                                    type="button"
+                                    onClick={() => onSelectLinked(linked.entryKey)}
+                                >
+                                    <span>{linked.source.label}</span>
+                                    <strong>{linked.summary}</strong>
+                                </button>
                             </li>
                         ))}
                     </ul>
