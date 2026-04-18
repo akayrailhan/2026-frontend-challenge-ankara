@@ -203,6 +203,88 @@
   gap: 24px;
 }
 
+.main-stack {
+  display: grid;
+  gap: 24px;
+  align-content: start;
+}
+
+.map-panel {
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  padding: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 16px;
+}
+
+.map-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.map-header h2 {
+  margin: 0 0 6px;
+}
+
+.map-header p {
+  margin: 0;
+  color: var(--text);
+}
+
+.map-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.map-canvas {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  min-height: 300px;
+}
+
+.map-canvas .leaflet-container {
+  width: 100%;
+  height: 360px;
+  font-family: inherit;
+}
+
+.map-missing {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: var(--surface-muted);
+  font-size: 13px;
+  display: grid;
+  gap: 10px;
+}
+
+.map-missing summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.map-missing ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.map-missing li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
 .timeline {
   border-radius: 24px;
   border: 1px solid var(--border);

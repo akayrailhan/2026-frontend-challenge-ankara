@@ -5,9 +5,11 @@ import { SOURCES } from './data/sources'
 import Header from './components/Header'
 import Filters from './components/Filters'
 import Timeline from './components/Timeline'
+import MapPanel from './components/MapPanel'
 import Sidebar from './components/Sidebar'
 import DetailView from './components/DetailView'
 import SummaryPanels from './components/SummaryPanels'
+import { LOCATION_COORDS } from './data/locations'
 
 const initialState = Object.fromEntries(
   SOURCES.map((source) => [
@@ -126,6 +128,21 @@ function formatDateLabel(value) {
   return date.toLocaleDateString()
 }
 
+function normalizeLocationKey(value) {
+  if (!value) return ''
+  return String(value).trim().toLowerCase()
+}
+
+function matchLocationKey(value) {
+  const normalized = normalizeLocationKey(value)
+  if (!normalized) return ''
+  if (LOCATION_COORDS[normalized]) return normalized
+  const fallbackKey = Object.keys(LOCATION_COORDS).find((key) =>
+    normalized.includes(key),
+  )
+  return fallbackKey || ''
+}
+
 function App() {
   const apiKey = import.meta.env.VITE_JOTFORM_API_KEY
   const [data, setData] = useState(initialState)
@@ -237,6 +254,48 @@ function App() {
       dateLabel: formatDateLabel(dateKey),
       entries,
     }))
+  }, [filteredEntries])
+
+  const mapEntries = useMemo(() => {
+    return filteredEntries
+      .map((entry) => {
+        const locationValue = getAnswerValue(entry.answers, 'location')
+        const locationKey = matchLocationKey(locationValue)
+        const coords = LOCATION_COORDS[locationKey]
+        if (!coords) return null
+        return {
+          entryKey: entry.entryKey,
+          coords,
+          summary: entry.summary,
+          sourceLabel: entry.source.label,
+          locationLabel: locationValue,
+        }
+      })
+      .filter(Boolean)
+  }, [filteredEntries])
+
+  const missingLocations = useMemo(() => {
+    const counts = new Map()
+    filteredEntries.forEach((entry) => {
+      const locationValue = getAnswerValue(entry.answers, 'location')
+      const locationKey = matchLocationKey(locationValue)
+      if (!locationValue || !locationKey) {
+        const label = locationValue ? String(locationValue) : 'Unknown'
+        counts.set(label, (counts.get(label) || 0) + 1)
+      }
+    })
+    return Array.from(counts.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+  }, [filteredEntries])
+
+  const missingMapCount = useMemo(() => {
+    return filteredEntries.filter((entry) => {
+      const locationValue = getAnswerValue(entry.answers, 'location')
+      if (!locationValue) return true
+      const locationKey = matchLocationKey(locationValue)
+      return !locationKey
+    }).length
   }, [filteredEntries])
 
   const selectedEntry = useMemo(() => {
@@ -394,16 +453,25 @@ function App() {
       />
 
       <div className="layout">
-        <Timeline
-          activeSourceMeta={activeSourceMeta}
-          groupedEntries={groupedEntries}
-          formatDate={formatDate}
-          showLoading={activeSourceMeta?.status === 'loading'}
-          showError={activeSourceMeta?.status === 'error'}
-          errorMessage={activeSourceMeta?.error}
-          selectedEntryKey={selectedEntryKey}
-          onSelectEntry={setSelectedEntryKey}
-        />
+        <div className="main-stack">
+          <MapPanel
+            entries={mapEntries}
+            missingCount={missingMapCount}
+            missingLocations={missingLocations}
+            selectedEntryKey={selectedEntryKey}
+            onSelectEntry={setSelectedEntryKey}
+          />
+          <Timeline
+            activeSourceMeta={activeSourceMeta}
+            groupedEntries={groupedEntries}
+            formatDate={formatDate}
+            showLoading={activeSourceMeta?.status === 'loading'}
+            showError={activeSourceMeta?.status === 'error'}
+            errorMessage={activeSourceMeta?.error}
+            selectedEntryKey={selectedEntryKey}
+            onSelectEntry={setSelectedEntryKey}
+          />
+        </div>
 
         <div className="side-stack">
           <DetailView
