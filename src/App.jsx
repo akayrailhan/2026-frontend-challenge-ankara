@@ -21,6 +21,56 @@ const statusLabel = {
   error: 'Error',
 }
 
+const locationFieldNames = ['location']
+const personFieldNames = ['personName', 'seenWith', 'senderName', 'recipientName']
+const contentFieldNames = ['note']
+
+function normalizeAnswerValue(value) {
+  if (Array.isArray(value)) return value.join(', ')
+  if (value === undefined || value === null) return ''
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
+function buildSearchText(submission) {
+  const answers = submission?.answers ? Object.values(submission.answers) : []
+  const contentParts = []
+  const locationParts = []
+  const personParts = []
+
+  answers.forEach((answer) => {
+    if (!answer) return
+    const label = answer.text || answer.name || ''
+    const name = answer.name || ''
+    const value = normalizeAnswerValue(answer.answer)
+    if (!value) return
+    const combined = label ? `${label}: ${value}` : value
+
+    if (locationFieldNames.includes(name)) {
+      locationParts.push(combined)
+      return
+    }
+
+    if (personFieldNames.includes(name)) {
+      personParts.push(combined)
+      return
+    }
+
+    if (contentFieldNames.includes(name)) {
+      contentParts.push(combined)
+      return
+    }
+
+    contentParts.push(combined)
+  })
+
+  return {
+    contentText: contentParts.join(' '),
+    locationText: locationParts.join(' '),
+    personText: personParts.join(' '),
+  }
+}
+
 function summarizeSubmission(submission) {
   const answers = submission?.answers ? Object.values(submission.answers) : []
   const parts = []
@@ -47,8 +97,12 @@ function App() {
   const apiKey = import.meta.env.VITE_JOTFORM_API_KEY
   const [data, setData] = useState(initialState)
   const [activeSource, setActiveSource] = useState('all')
-  const [query, setQuery] = useState('')
-  const [draftQuery, setDraftQuery] = useState('')
+  const [personQuery, setPersonQuery] = useState('')
+  const [locationQuery, setLocationQuery] = useState('')
+  const [contentQuery, setContentQuery] = useState('')
+  const [draftPersonQuery, setDraftPersonQuery] = useState('')
+  const [draftLocationQuery, setDraftLocationQuery] = useState('')
+  const [draftContentQuery, setDraftContentQuery] = useState('')
 
   const sourceStatus = useMemo(
     () =>
@@ -66,12 +120,16 @@ function App() {
     const entries = []
     sourceStatus.forEach((source) => {
       source.submissions.forEach((submission) => {
+        const searchText = buildSearchText(submission)
         entries.push({
           id: submission.id,
           createdAt: submission.created_at,
           summary: summarizeSubmission(submission),
           source,
           status: submission.status || 'unknown',
+          contentText: searchText.contentText,
+          locationText: searchText.locationText,
+          personText: searchText.personText,
         })
       })
     })
@@ -86,21 +144,39 @@ function App() {
         ? timelineEntries
         : timelineEntries.filter((entry) => entry.source.key === activeSource)
 
-    const trimmed = query.trim().toLowerCase()
-    if (!trimmed) return baseEntries
+    const personTrimmed = personQuery.trim().toLowerCase()
+    const locationTrimmed = locationQuery.trim().toLowerCase()
+    const contentTrimmed = contentQuery.trim().toLowerCase()
+
+    if (!personTrimmed && !locationTrimmed && !contentTrimmed) {
+      return baseEntries
+    }
 
     return baseEntries.filter((entry) => {
-      const haystack = [
-        entry.summary,
-        entry.source.label,
-        entry.status,
-        entry.createdAt,
-      ]
-        .join(' ')
-        .toLowerCase()
-      return haystack.includes(trimmed)
+      if (personTrimmed) {
+        const personHaystack = entry.personText.toLowerCase()
+        if (!personHaystack.includes(personTrimmed)) return false
+      }
+
+      if (locationTrimmed) {
+        const locationHaystack = entry.locationText.toLowerCase()
+        if (!locationHaystack.includes(locationTrimmed)) return false
+      }
+
+      if (contentTrimmed) {
+        const contentHaystack = entry.contentText.toLowerCase()
+        if (!contentHaystack.includes(contentTrimmed)) return false
+      }
+
+      return true
     })
-  }, [activeSource, query, timelineEntries])
+  }, [
+    activeSource,
+    contentQuery,
+    locationQuery,
+    personQuery,
+    timelineEntries,
+  ])
 
   const activeSourceMeta = useMemo(() => {
     if (activeSource === 'all') return null
@@ -196,9 +272,17 @@ function App() {
         sources={SOURCES}
         activeSource={activeSource}
         onSourceChange={setActiveSource}
-        draftQuery={draftQuery}
-        onDraftChange={setDraftQuery}
-        onSearch={() => setQuery(draftQuery)}
+        draftPersonQuery={draftPersonQuery}
+        draftLocationQuery={draftLocationQuery}
+        draftContentQuery={draftContentQuery}
+        onDraftPersonChange={setDraftPersonQuery}
+        onDraftLocationChange={setDraftLocationQuery}
+        onDraftContentChange={setDraftContentQuery}
+        onApply={() => {
+          setPersonQuery(draftPersonQuery)
+          setLocationQuery(draftLocationQuery)
+          setContentQuery(draftContentQuery)
+        }}
       />
 
       <div className="layout">
