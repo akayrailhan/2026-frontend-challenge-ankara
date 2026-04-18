@@ -1,16 +1,38 @@
-# React + Vite
+# Jotform Frontend Challenge Project
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Name**: Ali Kayra Ilhan
 
-Currently, two official plugins are available:
+## Getting Started (Local)
+1. Clone the repository.
+2. Open a terminal in the project root.
+3. Install dependencies:
+	- `npm install`
+4. Create a `.env` file in the project root with your Jotform credentials:
+	- `VITE_JOTFORM_API_KEY=your_api_key`
+	- `VITE_JOTFORM_FORM_ID_CHECKINS=your_form_id`
+	- `VITE_JOTFORM_FORM_ID_MESSAGES=your_form_id`
+	- `VITE_JOTFORM_FORM_ID_SIGHTINGS=your_form_id`
+	- `VITE_JOTFORM_FORM_ID_NOTES=your_form_id`
+	- `VITE_JOTFORM_FORM_ID_TIPS=your_form_id`
+5. Start the dev server:
+	- `npm run dev`
+6. Open the app in the browser at the URL printed in the terminal (usually `http://localhost:5173`).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+# 🚀 Challenge Duyurusu
 
-## React Compiler
+## 📅 Tarih ve Saat
+Cumartesi günü başlama saatinden itibaren üç saattir.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🎯 Challenge Konsepti
+Bu challenge'da, size özel hazırlanmış bir senaryo üzerine web uygulaması geliştirmeniz istenecektir. Challenge başlangıcında senaryo detayları paylaşılacaktır.Katılımcılar, verilen GitHub reposunu fork ederek kendi geliştirme ortamlarını oluşturacaklardır.
 
-## Expanding the ESLint configuration
+## 📦 GitHub Reposu
+Challenge için kullanılacak repo: https://github.com/cemjotform/2026-frontend-challenge-ankara
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Hazırlık Süreci
+1. GitHub reposunu fork edin
+2. Tercih ettiğiniz framework ile geliştirme ortamınızı hazırlayın
+3. Hazırladığınız setup'ı fork ettiğiniz repoya gönderin
+
+## 💡 Önemli Notlar
+- Katılımcılar kendi tercih ettikleri framework'leri kullanabilirler
