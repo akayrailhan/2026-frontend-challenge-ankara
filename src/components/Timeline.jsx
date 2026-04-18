@@ -5,6 +5,8 @@ function Timeline({
     showLoading,
     showError,
     errorMessage,
+    selectedEntryKey,
+    onSelectEntry,
 }) {
     return (
         <section className="timeline">
@@ -31,7 +33,19 @@ function Timeline({
             {entries.length > 0 && (
                 <ul className="entry-list">
                     {entries.map((entry) => (
-                        <li key={`${entry.source.key}-${entry.id}`} className="entry">
+                        <li
+                            key={entry.entryKey}
+                            className={`entry ${selectedEntryKey === entry.entryKey ? 'selected' : ''
+                                }`}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => onSelectEntry(entry.entryKey)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                    onSelectEntry(entry.entryKey)
+                                }
+                            }}
+                        >
                             <div className="entry-top">
                                 <span className="entry-source">{entry.source.label}</span>
                                 <span className="entry-date">

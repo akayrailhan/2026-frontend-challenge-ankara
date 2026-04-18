@@ -6,6 +6,7 @@ import Header from './components/Header'
 import Filters from './components/Filters'
 import Timeline from './components/Timeline'
 import Sidebar from './components/Sidebar'
+import DetailView from './components/DetailView'
 
 const initialState = Object.fromEntries(
   SOURCES.map((source) => [
@@ -103,6 +104,7 @@ function App() {
   const [draftPersonQuery, setDraftPersonQuery] = useState('')
   const [draftLocationQuery, setDraftLocationQuery] = useState('')
   const [draftContentQuery, setDraftContentQuery] = useState('')
+  const [selectedEntryKey, setSelectedEntryKey] = useState(null)
 
   const sourceStatus = useMemo(
     () =>
@@ -121,8 +123,10 @@ function App() {
     sourceStatus.forEach((source) => {
       source.submissions.forEach((submission) => {
         const searchText = buildSearchText(submission)
+        const entryKey = `${source.key}-${submission.id}`
         entries.push({
           id: submission.id,
+          entryKey,
           createdAt: submission.created_at,
           summary: summarizeSubmission(submission),
           source,
@@ -130,6 +134,7 @@ function App() {
           contentText: searchText.contentText,
           locationText: searchText.locationText,
           personText: searchText.personText,
+          answers: submission.answers,
         })
       })
     })
@@ -182,6 +187,11 @@ function App() {
     if (activeSource === 'all') return null
     return sourceStatus.find((source) => source.key === activeSource) || null
   }, [activeSource, sourceStatus])
+
+  const selectedEntry = useMemo(() => {
+    if (!selectedEntryKey) return null
+    return timelineEntries.find((entry) => entry.entryKey === selectedEntryKey)
+  }, [selectedEntryKey, timelineEntries])
 
   useEffect(() => {
     const missingIds = SOURCES.filter((source) => !source.formId)
@@ -293,9 +303,14 @@ function App() {
           showLoading={activeSourceMeta?.status === 'loading'}
           showError={activeSourceMeta?.status === 'error'}
           errorMessage={activeSourceMeta?.error}
+          selectedEntryKey={selectedEntryKey}
+          onSelectEntry={setSelectedEntryKey}
         />
 
-        <Sidebar sourceStatus={sourceStatus} statusLabel={statusLabel} />
+        <div className="side-stack">
+          <DetailView entry={selectedEntry} />
+          <Sidebar sourceStatus={sourceStatus} statusLabel={statusLabel} />
+        </div>
       </div>
     </div>
   )

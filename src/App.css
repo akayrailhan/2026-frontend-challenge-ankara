@@ -207,6 +207,18 @@
   background: var(--surface-muted);
   display: grid;
   gap: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.entry:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(20, 17, 15, 0.1);
+}
+
+.entry.selected {
+  border-color: var(--accent);
+  box-shadow: 0 12px 24px rgba(217, 119, 6, 0.2);
 }
 
 .entry-top {
@@ -260,6 +272,83 @@
 .sidebar {
   display: grid;
   gap: 16px;
+}
+
+.side-stack {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.detail-card {
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  padding: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  align-self: start;
+}
+
+.detail-card h3 {
+  margin: 0;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.detail-source {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12px;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.detail-date {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.detail-summary {
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.detail-answers h4 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.detail-answers ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.detail-answers li {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  background: var(--surface-muted);
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+}
+
+.detail-answers li span {
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-size: 11px;
+  color: var(--text);
 }
 
 .side-card {
