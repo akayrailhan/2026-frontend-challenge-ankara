@@ -10,6 +10,7 @@ export const LOCATION_COORDS = {
     'seğmenler parkı': [39.9039, 32.8689],
     atakule: [39.8870, 32.8656],
     'hamamönü': [39.9358, 32.8624],
+    'ankara kalesi': [39.94142, 32.86549],
 }
 
 export const DEFAULT_CENTER = [39.9334, 32.8597]

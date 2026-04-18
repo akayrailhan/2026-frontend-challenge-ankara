@@ -27,9 +27,9 @@ function MapFocus({ target }) {
 }
 
 function MapPanel({
-    entries,
-    missingCount,
-    missingLocations,
+    entries = [],
+    missingCount = 0,
+    missingLocations = [],
     selectedEntryKey,
     onSelectEntry,
 }) {
@@ -58,14 +58,10 @@ function MapPanel({
             </div>
 
             <div className="map-canvas">
-                <MapContainer
-                    center={DEFAULT_CENTER}
-                    zoom={DEFAULT_ZOOM}
-                    scrollWheelZoom
-                >
+                <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} scrollWheelZoom>
                     <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
                     {entries.map((entry) => (
                         <Marker
@@ -93,7 +89,7 @@ function MapPanel({
                 </MapContainer>
             </div>
 
-            {missingCount > 0 && (
+            {missingLocations.length > 0 && (
                 <details className="map-missing">
                     <summary>Missing location labels</summary>
                     <ul>

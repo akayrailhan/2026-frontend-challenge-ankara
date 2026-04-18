@@ -29,6 +29,57 @@ const locationFieldNames = ['location']
 const personFieldNames = ['personName', 'seenWith', 'senderName', 'recipientName']
 const contentFieldNames = ['note']
 
+function normalizeForMatch(value) {
+  if (!value) return ''
+  return String(value)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function tokenize(value) {
+  const normalized = normalizeForMatch(value)
+  return normalized ? normalized.split(' ').filter(Boolean) : []
+}
+
+function editDistance(a, b) {
+  if (a === b) return 0
+  const matrix = Array.from({ length: a.length + 1 }, () => [])
+  for (let i = 0; i <= a.length; i += 1) matrix[i][0] = i
+  for (let j = 0; j <= b.length; j += 1) matrix[0][j] = j
+  for (let i = 1; i <= a.length; i += 1) {
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost,
+      )
+    }
+  }
+  return matrix[a.length][b.length]
+}
+
+function fuzzyTokenMatch(queryToken, targetToken) {
+  if (!queryToken || !targetToken) return false
+  if (targetToken.includes(queryToken)) return true
+  if (queryToken.length <= 2) return false
+  return editDistance(queryToken, targetToken) <= 1
+}
+
+function matchesPersonQuery(entryTags, query) {
+  const queryTokens = tokenize(query)
+  if (queryTokens.length === 0) return true
+  const targetTokens = entryTags.flatMap((tag) => tokenize(tag))
+  if (targetTokens.length === 0) return false
+  return queryTokens.every((token) =>
+    targetTokens.some((target) => fuzzyTokenMatch(token, target)),
+  )
+}
+
 function normalizeAnswerValue(value) {
   if (Array.isArray(value)) return value.join(', ')
   if (value === undefined || value === null) return ''
@@ -85,7 +136,7 @@ function extractPersonTags(answers) {
     const value = normalizeAnswerValue(answer.answer)
     value
       .split(',')
-      .map((part) => part.trim().toLowerCase())
+      .map((part) => normalizeForMatch(part))
       .filter(Boolean)
       .forEach((part) => tags.add(part))
   })
@@ -131,16 +182,6 @@ function formatDateLabel(value) {
 function normalizeLocationKey(value) {
   if (!value) return ''
   return String(value).trim().toLowerCase()
-}
-
-function matchLocationKey(value) {
-  const normalized = normalizeLocationKey(value)
-  if (!normalized) return ''
-  if (LOCATION_COORDS[normalized]) return normalized
-  const fallbackKey = Object.keys(LOCATION_COORDS).find((key) =>
-    normalized.includes(key),
-  )
-  return fallbackKey || ''
 }
 
 function App() {
@@ -210,8 +251,7 @@ function App() {
 
     return baseEntries.filter((entry) => {
       if (personTrimmed) {
-        const personHaystack = entry.personText.toLowerCase()
-        if (!personHaystack.includes(personTrimmed)) return false
+        if (!matchesPersonQuery(entry.personTags, personTrimmed)) return false
       }
 
       if (locationTrimmed) {
@@ -260,7 +300,7 @@ function App() {
     return filteredEntries
       .map((entry) => {
         const locationValue = getAnswerValue(entry.answers, 'location')
-        const locationKey = matchLocationKey(locationValue)
+        const locationKey = normalizeLocationKey(locationValue)
         const coords = LOCATION_COORDS[locationKey]
         if (!coords) return null
         return {
@@ -274,12 +314,21 @@ function App() {
       .filter(Boolean)
   }, [filteredEntries])
 
+  const missingMapCount = useMemo(() => {
+    return filteredEntries.filter((entry) => {
+      const locationValue = getAnswerValue(entry.answers, 'location')
+      if (!locationValue) return true
+      const locationKey = normalizeLocationKey(locationValue)
+      return !LOCATION_COORDS[locationKey]
+    }).length
+  }, [filteredEntries])
+
   const missingLocations = useMemo(() => {
     const counts = new Map()
     filteredEntries.forEach((entry) => {
       const locationValue = getAnswerValue(entry.answers, 'location')
-      const locationKey = matchLocationKey(locationValue)
-      if (!locationValue || !locationKey) {
+      const locationKey = normalizeLocationKey(locationValue)
+      if (!locationValue || !LOCATION_COORDS[locationKey]) {
         const label = locationValue ? String(locationValue) : 'Unknown'
         counts.set(label, (counts.get(label) || 0) + 1)
       }
@@ -287,15 +336,6 @@ function App() {
     return Array.from(counts.entries())
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
-  }, [filteredEntries])
-
-  const missingMapCount = useMemo(() => {
-    return filteredEntries.filter((entry) => {
-      const locationValue = getAnswerValue(entry.answers, 'location')
-      if (!locationValue) return true
-      const locationKey = matchLocationKey(locationValue)
-      return !locationKey
-    }).length
   }, [filteredEntries])
 
   const selectedEntry = useMemo(() => {
