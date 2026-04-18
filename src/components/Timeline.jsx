@@ -1,6 +1,6 @@
 function Timeline({
     activeSourceMeta,
-    entries,
+    groupedEntries,
     formatDate,
     showLoading,
     showError,
@@ -8,6 +8,11 @@ function Timeline({
     selectedEntryKey,
     onSelectEntry,
 }) {
+    const totalEntries = groupedEntries.reduce(
+        (count, group) => count + group.entries.length,
+        0,
+    )
+
     return (
         <section className="timeline">
             <div className="timeline-header">
@@ -19,46 +24,59 @@ function Timeline({
                             : 'Most recent activity across the full dataset.'}
                     </p>
                 </div>
-                <span className="pill">{entries.length} entries</span>
+                <span className="pill">{totalEntries} entries</span>
             </div>
 
             {showLoading && <p className="muted">Loading submissions...</p>}
 
             {showError && <p className="error">{errorMessage}</p>}
 
-            {!showLoading && !showError && entries.length === 0 && (
+            {!showLoading && !showError && totalEntries === 0 && (
                 <p className="muted">No submissions yet.</p>
             )}
 
-            {entries.length > 0 && (
-                <ul className="entry-list">
-                    {entries.map((entry) => (
-                        <li
-                            key={entry.entryKey}
-                            className={`entry ${selectedEntryKey === entry.entryKey ? 'selected' : ''
-                                }`}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => onSelectEntry(entry.entryKey)}
-                            onKeyDown={(event) => {
-                                if (event.key === 'Enter') {
-                                    onSelectEntry(entry.entryKey)
-                                }
-                            }}
-                        >
-                            <div className="entry-top">
-                                <span className="entry-source">{entry.source.label}</span>
-                                <span className="entry-date">
-                                    {formatDate(entry.createdAt)}
-                                </span>
+            {totalEntries > 0 && (
+                <div className="entry-groups">
+                    {groupedEntries.map((group) => (
+                        <div key={group.dateKey} className="entry-group">
+                            <div className="entry-date-divider">
+                                <span>{group.dateLabel}</span>
                             </div>
-                            <p>{entry.summary}</p>
-                            <div className="entry-meta">
-                                <span className="pill subtle">{entry.status}</span>
-                            </div>
-                        </li>
+                            <ul className="entry-list">
+                                {group.entries.map((entry) => (
+                                    <li
+                                        key={entry.entryKey}
+                                        className={`entry ${selectedEntryKey === entry.entryKey
+                                                ? 'selected'
+                                                : ''
+                                            }`}
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => onSelectEntry(entry.entryKey)}
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter') {
+                                                onSelectEntry(entry.entryKey)
+                                            }
+                                        }}
+                                    >
+                                        <div className="entry-top">
+                                            <span className="entry-source">
+                                                {entry.source.label}
+                                            </span>
+                                            <span className="entry-date">
+                                                {formatDate(entry.createdAt)}
+                                            </span>
+                                        </div>
+                                        <p>{entry.summary}</p>
+                                        <div className="entry-meta">
+                                            <span className="pill subtle">{entry.status}</span>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     ))}
-                </ul>
+                </div>
             )}
         </section>
     )

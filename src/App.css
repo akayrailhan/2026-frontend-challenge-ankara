@@ -235,6 +235,29 @@
   gap: 16px;
 }
 
+.entry-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.entry-date-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0 12px;
+  color: var(--text);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.entry-date-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
 .entry {
   border-radius: 16px;
   border: 1px solid var(--border);

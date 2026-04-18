@@ -119,6 +119,13 @@ function formatDate(value) {
   return date.toLocaleString()
 }
 
+function formatDateLabel(value) {
+  if (!value) return 'Unknown date'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+  return date.toLocaleDateString()
+}
+
 function App() {
   const apiKey = import.meta.env.VITE_JOTFORM_API_KEY
   const [data, setData] = useState(initialState)
@@ -214,6 +221,23 @@ function App() {
     if (activeSource === 'all') return null
     return sourceStatus.find((source) => source.key === activeSource) || null
   }, [activeSource, sourceStatus])
+
+  const groupedEntries = useMemo(() => {
+    const groups = new Map()
+    filteredEntries.forEach((entry) => {
+      const dateKey = entry.createdAt?.split(' ')[0] || 'Unknown'
+      if (!groups.has(dateKey)) {
+        groups.set(dateKey, [])
+      }
+      groups.get(dateKey).push(entry)
+    })
+
+    return Array.from(groups.entries()).map(([dateKey, entries]) => ({
+      dateKey,
+      dateLabel: formatDateLabel(dateKey),
+      entries,
+    }))
+  }, [filteredEntries])
 
   const selectedEntry = useMemo(() => {
     if (!selectedEntryKey) return null
@@ -372,7 +396,7 @@ function App() {
       <div className="layout">
         <Timeline
           activeSourceMeta={activeSourceMeta}
-          entries={filteredEntries}
+          groupedEntries={groupedEntries}
           formatDate={formatDate}
           showLoading={activeSourceMeta?.status === 'loading'}
           showError={activeSourceMeta?.status === 'error'}
